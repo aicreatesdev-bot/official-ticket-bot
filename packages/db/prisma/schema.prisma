@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TicketStatus {
+  open
+  claimed
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum ClaimMode {
+  open_claim
+  read_only_claim
+  private_claim
+}
+
+enum TicketEventType {
+  created
+  claimed
+  unclaimed
+  claim_transferred
+  user_added
+  user_removed
+  renamed
+  priority_changed
+  closed
+  reopened
+  transcript_saved
+  auto_close_warning
+  auto_closed
+  panel_sent
+  error
+}
+
+model GuildSettings {
+  guildId              String   @id
+  ownerId              String?
+  trustedAdminRoles    String[] @default([])
+  staffRoles           String[] @default([])
+  managerRoles         String[] @default([])
+  allowedCreateRoles   String[] @default([])
+  blockedCreateRoles   String[] @default([])
+  managePanelRoles     String[] @default([])
+  manageTicketRoles    String[] @default([])
+  logChannelId         String?
+  transcriptChannelId  String?
+  maxOpenTickets       Int      @default(3)
+  ticketCooldown       Int      @default(60)
+  autoCloseEnabled     Boolean  @default(false)
+  autoCloseTime        Int      @default(86400)
+  dmTranscriptOnClose  Boolean  @default(false)
+  brandName            String   @default("Rose Ticket")
+  brandColor           Int      @default(15824082)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  panels     TicketPanel[]
+  templates  PanelTemplate[]
+  tickets    Ticket[]
+  transcripts Transcripts[]
+  events     TicketEvent[]
+  counters   GuildTicketCounter[]
+}
+
+model TicketPanel {
+  panelId             String   @id @default(cuid())
+  guildId             String
+  name                String
+  embedTitle          String
+  embedDescription    String
+  embedColor          Int      @default(15824082)
+  imageUrl            String?
+  thumbnailUrl        String?
+  channelId           String?
+  messageId           String?
+  dropdownPlaceholder String   @default("Select a ticket category")
+  isEnabled           Boolean  @default(true)
+  createdBy           String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  guild     GuildSettings       @relation(fields: [guildId], references: [guildId], onDelete: Cascade)
+  options   TicketPanelOption[]
+  tickets   Ticket[]
+  templates PanelTemplate[]
+
+  @@index([guildId])
+  @@index([messageId])
+}
+
+model TicketPanelOption {
+  optionId          String    @id @default(cuid())
+  panelId           String
+  label             String
+  description       String?
+  emoji             String?
+  categoryKey       String
+  staffRoleIds      String[]  @default([])
+  parentChannelId   String
+  ticketNameFormat  String
+  modalQuestions    Json
+  priorityEnabled   Boolean   @default(true)
+  pingStaff         Boolean   @default(true)
+  claimMode         ClaimMode @default(open_claim)
+  sortOrder         Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  panel  TicketPanel @relation(fields: [panelId], references: [panelId], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@index([panelId])
+  @@index([categoryKey])
+}
+
+model PanelTemplate {
+  templateId String   @id @default(cuid())
+  guildId    String
+  panelId    String?
+  name       String
+  data       Json
+  createdBy  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  guild GuildSettings @relation(fields: [guildId], references: [guildId], onDelete: Cascade)
+  panel TicketPanel?  @relation(fields: [panelId], references: [panelId], onDelete: SetNull)
+
+  @@index([guildId])
+}
+
+model Ticket {
+  ticketId          String         @id @default(cuid())
+  publicId          Int
+  guildId           String
+  panelId           String?
+  optionId          String?
+  creatorId         String
+  threadId          String         @unique
+  parentChannelId   String
+  title             String
+  description       String
+  proof             String?
+  formAnswers       Json?
+  category          String
+  priority          TicketPriority @default(medium)
+  status            TicketStatus   @default(open)
+  claimMode         ClaimMode      @default(open_claim)
+  claimedBy         String?
+  addedUsers        String[]       @default([])
+  staffRoleIds      String[]       @default([])
+  firstResponseAt   DateTime?
+  lastMessageAt     DateTime       @default(now())
+  warningSentAt     DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  closedAt          DateTime?
+  closedBy          String?
+  closeReason       String?
+  transcriptId      String?        @unique
+
+  guild      GuildSettings       @relation(fields: [guildId], references: [guildId], onDelete: Cascade)
+  panel      TicketPanel?        @relation(fields: [panelId], references: [panelId], onDelete: SetNull)
+  option     TicketPanelOption?  @relation(fields: [optionId], references: [optionId], onDelete: SetNull)
+  transcript Transcripts?
+  events     TicketEvent[]
+
+  @@unique([guildId, publicId])
+  @@index([guildId, status])
+  @@index([guildId, creatorId, status])
+  @@index([claimedBy])
+}
+
+model Transcripts {
+  transcriptId    String   @id @default(cuid())
+  ticketId        String   @unique
+  guildId         String
+  htmlContent     String
+  textContent     String
+  messageCount    Int
+  attachmentLinks String[] @default([])
+  createdAt       DateTime @default(now())
+
+  guild  GuildSettings @relation(fields: [guildId], references: [guildId], onDelete: Cascade)
+  ticket Ticket        @relation(fields: [ticketId], references: [ticketId], onDelete: Cascade)
+
+  @@index([guildId, createdAt])
+}
+
+model TicketEvent {
+  eventId   String          @id @default(cuid())
+  guildId   String
+  ticketId  String?
+  actorId   String?
+  type      TicketEventType
+  message   String
+  metadata  Json?
+  createdAt DateTime        @default(now())
+
+  guild  GuildSettings @relation(fields: [guildId], references: [guildId], onDelete: Cascade)
+  ticket Ticket?       @relation(fields: [ticketId], references: [ticketId], onDelete: Cascade)
+
+  @@index([guildId, createdAt])
+  @@index([ticketId, createdAt])
+}
+
+model GuildTicketCounter {
+  id          String   @id @default(cuid())
+  guildId     String
+  categoryKey String
+  count       Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  guild GuildSettings @relation(fields: [guildId], references: [guildId], onDelete: Cascade)
+
+  @@unique([guildId, categoryKey])
+}
+
+model TicketCooldown {
+  id        String   @id @default(cuid())
+  guildId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, userId])
+  @@index([createdAt])
+}

@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.env
+.env.local
+.env.*.local
+dist
+.next
+coverage
+*.tsbuildinfo
+prisma/dev.db
+uploads
+transcripts
+logs
+*.log
