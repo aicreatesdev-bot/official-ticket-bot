@@ -106,6 +106,9 @@ export async function createTicketFromModal(interaction: ModalSubmitInteraction,
       return replyError(interaction, "You do not have permission to create tickets in this server.");
     }
 
+    const rateLimitMessage = await ticketRateLimitMessage(guild.id, interaction.user.id);
+    if (rateLimitMessage) return replyError(interaction, rateLimitMessage);
+
     const parent = await guild.channels.fetch(option.parentChannelId).catch(() => null);
     if (!parent || parent.type !== ChannelType.GuildText) {
       return replyError(interaction, "The configured parent support channel is missing or is not a text channel.");
@@ -229,6 +232,52 @@ async function allocatePublicTicketId(guildId: string) {
   });
 
   return repaired.count;
+}
+
+async function ticketRateLimitMessage(guildId: string, userId: string) {
+  const checks = [
+    {
+      enabled: env.TICKET_RATE_LIMIT_PER_HOUR > 0,
+      limit: env.TICKET_RATE_LIMIT_PER_HOUR,
+      label: "hour",
+      windowMs: 60 * 60 * 1000
+    },
+    {
+      enabled: env.TICKET_RATE_LIMIT_PER_DAY > 0,
+      limit: env.TICKET_RATE_LIMIT_PER_DAY,
+      label: "day",
+      windowMs: 24 * 60 * 60 * 1000
+    }
+  ];
+
+  for (const check of checks) {
+    if (!check.enabled) continue;
+
+    const since = new Date(Date.now() - check.windowMs);
+    const count = await prisma.ticket.count({
+      where: {
+        guildId,
+        creatorId: userId,
+        createdAt: { gte: since }
+      }
+    });
+    if (count < check.limit) continue;
+
+    const oldestTicketInWindow = await prisma.ticket.findFirst({
+      where: {
+        guildId,
+        creatorId: userId,
+        createdAt: { gte: since }
+      },
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true }
+    });
+    const retryAt = oldestTicketInWindow ? new Date(oldestTicketInWindow.createdAt.getTime() + check.windowMs) : null;
+    const retryText = retryAt ? ` Try again <t:${Math.ceil(retryAt.getTime() / 1000)}:R>.` : "";
+    return `You reached the ticket creation limit of **${check.limit} ticket${check.limit === 1 ? "" : "s"} per ${check.label}**.${retryText}`;
+  }
+
+  return null;
 }
 
 export async function claimTicket(interaction: ButtonInteraction | ChatInputCommandInteraction, ticketId?: string) {

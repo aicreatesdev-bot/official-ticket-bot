@@ -20,12 +20,16 @@ Copy `.env.example` to `.env` and fill in:
 - `DISCORD_BOT_TOKEN`
 - `DISCORD_REDIRECT_URI`
 - `SESSION_SECRET`
+- `TICKET_RATE_LIMIT_PER_HOUR`
+- `TICKET_RATE_LIMIT_PER_DAY`
 - `APP_URL`
 - `API_URL`
 - `NEXT_PUBLIC_API_URL`
 - `CORS_ORIGIN`
 
 Use a long random value for `SESSION_SECRET`.
+
+By default, users can create `3` tickets per rolling hour and `10` tickets per rolling 24 hours. Set either limit to `0` to disable that window.
 
 ## 3. Discord Developer Portal
 

@@ -34,6 +34,8 @@ DISCORD_BOT_TOKEN=
 DISCORD_CLIENT_ID=
 BOT_DEV_GUILD_ID=
 DISCORD_ENABLE_PRIVILEGED_INTENTS=false
+TICKET_RATE_LIMIT_PER_HOUR=3
+TICKET_RATE_LIMIT_PER_DAY=10
 AUTO_CLOSE_INTERVAL_MS=300000
 TRANSCRIPT_MAX_MESSAGES=5000
 NODE_ENV=production
@@ -42,6 +44,8 @@ NODE_ENV=production
 `BOT_DEV_GUILD_ID` is recommended for this server because it registers commands instantly for the configured guild. Remove it only when you want global command registration.
 
 Keep `DISCORD_ENABLE_PRIVILEGED_INTENTS=false` unless you have enabled **Server Members Intent** and **Message Content Intent** in the Discord Developer Portal. Discord will crash the bot with `Used disallowed intents` if this is true while those portal toggles are off.
+
+`TICKET_RATE_LIMIT_PER_HOUR=3` and `TICKET_RATE_LIMIT_PER_DAY=10` limit each user to 3 tickets per rolling hour and 10 tickets per rolling 24 hours. Set either value to `0` to disable that window.
 
 If your database password contains special characters such as `@`, encode them in `DATABASE_URL`. For example, `@` becomes `%40`.
 

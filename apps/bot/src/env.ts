@@ -14,6 +14,8 @@ const envSchema = z.object({
   DISCORD_ENABLE_PRIVILEGED_INTENTS: z
     .preprocess((value) => value === "true" || value === "1" || value === true, z.boolean())
     .default(false),
+  TICKET_RATE_LIMIT_PER_HOUR: z.coerce.number().int().min(0).default(3),
+  TICKET_RATE_LIMIT_PER_DAY: z.coerce.number().int().min(0).default(10),
   AUTO_CLOSE_INTERVAL_MS: z.coerce.number().int().positive().default(300000),
   TRANSCRIPT_MAX_MESSAGES: z.coerce.number().int().positive().default(5000)
 });

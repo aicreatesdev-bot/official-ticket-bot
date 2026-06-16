@@ -181,6 +181,7 @@ model Ticket {
   @@unique([guildId, publicId])
   @@index([guildId, status])
   @@index([guildId, creatorId, status])
+  @@index([guildId, creatorId, createdAt])
   @@index([claimedBy])
 }
 
