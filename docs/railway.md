@@ -66,11 +66,7 @@ Keep the real value in Railway variables only. Do not commit secrets.
 2. Add a service from your GitHub repository.
 3. Add the variables above.
 4. Deploy the service.
-5. After deploy, run command registration once from Railway shell or locally with Railway variables:
-
-```bash
-pnpm railway:bot:commands
-```
+5. Commands register automatically when the bot starts. Set `BOT_DEV_GUILD_ID` to your server ID for instant guild command registration.
 
 Railway runs the schema sync before each deploy through `preDeployCommand`:
 
@@ -87,6 +83,7 @@ Healthy startup logs look like:
 ```text
 [Rose Ticket] Starting Rose Ticket bot process.
 [Rose Ticket] Logged in as ...
+[Rose Ticket] Registered 5 slash commands for 1 guild.
 [Rose Ticket] Restored 0 active ticket record(s) from the database.
 [Rose Ticket] Repaired 0 visible ticket control message(s).
 [Rose Ticket] Repainted 1 ticket panel message(s).

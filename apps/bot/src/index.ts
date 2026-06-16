@@ -4,6 +4,7 @@ import { env } from "./env.js";
 import { logger } from "./logger.js";
 import { registerInteractionHandlers } from "./interactions.js";
 import { ensurePanelMessages } from "./panels.js";
+import { registerSlashCommands } from "./registerCommands.js";
 import { ensureVisibleTicketControls, updateTicketActivity } from "./tickets.js";
 import { startAutoCloseWorker } from "./worker.js";
 import { sweepLocks } from "./locks.js";
@@ -27,6 +28,11 @@ client.once("ready", async () => {
   client.user?.setPresence({
     activities: [{ name: "made for rose", type: ActivityType.Playing }],
     status: "online"
+  });
+
+  const commandGuildIds = env.BOT_DEV_GUILD_ID ? [env.BOT_DEV_GUILD_ID] : client.guilds.cache.map((guild) => guild.id);
+  await registerSlashCommands(commandGuildIds).catch((error) => {
+    logger.warn("Failed to register slash commands. Check DISCORD_CLIENT_ID, DISCORD_BOT_TOKEN, and bot application permissions.", error);
   });
 
   const activeTickets = await prisma.ticket
