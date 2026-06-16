@@ -16,6 +16,12 @@ Start command:
 pnpm railway:bot:start
 ```
 
+Pre-deploy command:
+
+```bash
+pnpm railway:bot:predeploy
+```
+
 The start command runs the bot in the foreground. Do not use `scripts/launch-bot.mjs` on Railway because that script is only for local desktop use and detaches the bot process.
 
 ## Required Variables
@@ -56,13 +62,13 @@ Keep the real value in Railway variables only. Do not commit secrets.
 pnpm railway:bot:commands
 ```
 
-If this is a brand-new database, run the schema sync once before the first bot deploy:
+Railway runs the schema sync before each deploy through `preDeployCommand`:
 
 ```bash
 pnpm railway:bot:predeploy
 ```
 
-Do this from Railway shell or from your machine with the same `DATABASE_URL`. It is not run automatically on every deploy, because a database schema command should not block normal bot restarts.
+If this command fails, the bot should not start because commands would fail without the database schema. Fix `DATABASE_URL`, redeploy, and then check the logs again.
 
 ## Expected Logs
 

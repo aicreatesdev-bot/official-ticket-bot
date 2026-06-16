@@ -48,7 +48,14 @@ export function registerInteractionHandlers(client: Client) {
       logger.error("Unhandled interaction error.", error);
       if (interaction.isRepliable()) {
         await safeReply(interaction as ChatInputCommandInteraction, {
-          embeds: [roseEmbed("Rose Ticket Error", "Something went wrong while handling that action.")],
+          embeds: [
+            roseEmbed(
+              "Rose Ticket Error",
+              isDatabaseError(error)
+                ? "The bot is online, but the database is not ready or cannot be reached. Check `DATABASE_URL` and run the Railway pre-deploy schema sync."
+                : "Something went wrong while handling that action."
+            )
+          ],
           ephemeral: true
         }).catch(() => null);
       }
@@ -66,6 +73,11 @@ async function handleInteraction(interaction: Interaction) {
   }
   if (interaction.isButton()) return handleButton(interaction);
   if (interaction.isModalSubmit()) return handleModal(interaction);
+}
+
+function isDatabaseError(error: unknown) {
+  const text = error instanceof Error ? `${error.name}\n${error.message}\n${error.stack ?? ""}` : String(error);
+  return /Prisma|DATABASE_URL|database server|Can't reach database|relation .* does not exist|table .* does not exist/i.test(text);
 }
 
 async function handleCommand(interaction: ChatInputCommandInteraction) {
