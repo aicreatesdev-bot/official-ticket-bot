@@ -13,9 +13,12 @@ import {
 import { prisma } from "@rose-ticket/db";
 import {
   brand,
+  colorToInt,
   customId,
   defaultModalQuestions,
   defaultTicketNameFormat,
+  hexColorSchema,
+  intToHexColor,
   panelKeyFromName,
   panelSchema
 } from "@rose-ticket/shared";
@@ -30,6 +33,7 @@ export async function createPanelFromCommand(interaction: ChatInputCommandIntera
   const parent = interaction.options.getChannel("parent_channel", true);
   const staffRole = interaction.options.getRole("staff_role", true);
   const optionLabel = interaction.options.getString("option_label") ?? "General Support";
+  const rawColor = interaction.options.getString("color") ?? "#22c55e";
   if (parent.type !== ChannelType.GuildText || !("threads" in parent)) {
     return replyError(interaction, "The parent channel must be a normal text channel that supports private threads.");
   }
@@ -38,8 +42,8 @@ export async function createPanelFromCommand(interaction: ChatInputCommandIntera
     name: interaction.options.getString("name", true),
     embedTitle: interaction.options.getString("title", true),
     embedDescription: interaction.options.getString("description", true),
-    embedColor: "#f174d2",
-    dropdownPlaceholder: "Select a ticket category",
+    embedColor: rawColor,
+    dropdownPlaceholder: "🎫 create ticket for any query",
     isEnabled: true
   });
 
@@ -57,7 +61,7 @@ export async function createPanelFromCommand(interaction: ChatInputCommandIntera
       name: parsed.data.name,
       embedTitle: parsed.data.embedTitle,
       embedDescription: parsed.data.embedDescription,
-      embedColor: brand.color,
+      embedColor: colorToInt(parsed.data.embedColor),
       dropdownPlaceholder: parsed.data.dropdownPlaceholder,
       isEnabled: parsed.data.isEnabled,
       createdBy: interaction.user.id,
@@ -122,6 +126,17 @@ export async function editPanelFromCommand(interaction: ChatInputCommandInteract
     ),
     new ActionRowBuilder<TextInputBuilder>().addComponents(
       new TextInputBuilder()
+        .setCustomId("color")
+        .setLabel("Embed color hex")
+        .setPlaceholder("#22c55e")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMinLength(6)
+        .setMaxLength(7)
+        .setValue(intToHexColor(panel.embedColor))
+    ),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder()
         .setCustomId("enabled")
         .setLabel("Enabled? true or false")
         .setStyle(TextInputStyle.Short)
@@ -148,9 +163,12 @@ export async function editPanelFromModal(interaction: ModalSubmitInteraction, pa
 
   const title = interaction.fields.getTextInputValue("title").trim();
   const description = interaction.fields.getTextInputValue("description").trim();
+  const color = interaction.fields.getTextInputValue("color").trim();
   const enabled = parseEnabledInput(interaction.fields.getTextInputValue("enabled"));
 
   if (!title || !description) return replyError(interaction, "Panel title and description cannot be empty.");
+  const parsedColor = hexColorSchema.safeParse(color);
+  if (!parsedColor.success) return replyError(interaction, "Embed color must be a 6-digit hex color like `#22c55e`.");
   if (enabled === null) return replyError(interaction, "Enabled must be `true` or `false`.");
 
   await prisma.ticketPanel.update({
@@ -158,7 +176,7 @@ export async function editPanelFromModal(interaction: ModalSubmitInteraction, pa
     data: {
       embedTitle: title,
       embedDescription: description,
-      embedColor: brand.color,
+      embedColor: colorToInt(parsedColor.data),
       isEnabled: enabled
     }
   });
@@ -214,7 +232,7 @@ export async function showPanelsFromCommand(interaction: ChatInputCommandInterac
     const sent = panel.channelId ? `<#${panel.channelId}>` : "not sent";
     return [
       `**${index + 1}. ${panel.name}**`,
-      `Key: \`${panel.panelId}\``,
+      `Key: \`${displayPanelKey(panel.panelId)}\``,
       `Status: ${status}`,
       `Options: ${panel._count.options}`,
       `Tickets: ${panel._count.tickets}`,
@@ -289,7 +307,7 @@ export async function ensurePanelMessages(client: Client) {
   return repainted;
 }
 
-async function refreshPanelMessage(client: Client, panelId: string) {
+export async function refreshPanelMessage(client: Client, panelId: string) {
   const panel = await prisma.ticketPanel.findUnique({
     where: { panelId },
     include: { options: { orderBy: { sortOrder: "asc" } } }
@@ -338,16 +356,22 @@ async function findPanelByKeyOrName(guildId: string, keyOrName: string) {
 }
 
 function panelLookupWhere(guildId: string, keyOrName: string) {
-  const normalizedKey = keyOrName.startsWith("embed:") ? keyOrName : panelKeyFromName(keyOrName);
+  const normalizedKey = panelKeyFromName(keyOrName.replace(/^embed:/, ""));
+  const legacyKey = `embed:${normalizedKey}`;
 
   return {
     guildId,
     OR: [
       { panelId: keyOrName },
       { panelId: normalizedKey },
+      { panelId: legacyKey },
       { name: { equals: keyOrName, mode: "insensitive" as const } }
     ]
   };
+}
+
+function displayPanelKey(panelId: string) {
+  return panelId.replace(/^embed:/, "");
 }
 
 export function defaultPanelPreview() {
@@ -355,6 +379,6 @@ export function defaultPanelPreview() {
     name: "Support",
     embedTitle: `${brand.name} Support`,
     embedDescription: "Select a category below to open a private support ticket.",
-    embedColor: "#f174d2"
+    embedColor: "#22c55e"
   };
 }

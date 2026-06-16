@@ -31,7 +31,7 @@ import {
   type ModalQuestion,
   type TicketPriority
 } from "@rose-ticket/shared";
-import { prisma, type Ticket, type TicketPanelOption } from "@rose-ticket/db";
+import { prisma, type Ticket } from "@rose-ticket/db";
 import { env } from "./env.js";
 import {
   errorEmbed,
@@ -45,25 +45,18 @@ import {
 import { acquireLock, releaseLock } from "./locks.js";
 import { logTicketEvent, postClosedTicketLog, postGuildLog } from "./logging.js";
 import { logger } from "./logger.js";
+import { refreshPanelMessage } from "./panels.js";
 import { ensureGuildSettings, memberRoleIds } from "./settings.js";
 
 export async function showTicketModal(interaction: StringSelectMenuInteraction, panelId: string) {
   const optionId = interaction.values[0];
   if (!optionId) return replyError(interaction, "No ticket option was selected.");
 
-  const panel = await prisma.ticketPanel.findFirst({
-    where: { panelId, guildId: interaction.guildId ?? undefined, isEnabled: true },
-    include: { options: true }
-  });
-  const option = panel?.options.find((item) => item.optionId === optionId);
-
-  if (!panel || !option) return replyError(interaction, "That ticket panel is not available anymore.");
-
   const modal = new ModalBuilder()
-    .setTitle(`Open ${option.label}`)
+    .setTitle("Open Ticket")
     .setCustomId(customId("ticket", "create", panelId, optionId));
 
-  const questions = buildModalQuestions(option);
+  const questions = buildTicketModalQuestions();
   for (const question of questions) {
     modal.addComponents(
       new ActionRowBuilder<TextInputBuilder>().addComponents(
@@ -118,7 +111,7 @@ export async function createTicketFromModal(interaction: ModalSubmitInteraction,
       return replyError(interaction, "The configured parent support channel is missing or is not a text channel.");
     }
 
-    const answers = collectModalAnswers(interaction, buildModalQuestions(option));
+    const answers = collectModalAnswers(interaction);
     const title = answers.title ?? "Support request";
     const description = answers.description ?? "No description provided.";
     const priority = normalizePriority(answers.priority);
@@ -163,7 +156,7 @@ export async function createTicketFromModal(interaction: ModalSubmitInteraction,
         parentChannelId: parent.id,
         title,
         description,
-        proof: answers.proof,
+        proof: undefined,
         formAnswers: answers,
         category: option.label,
         priority,
@@ -178,7 +171,7 @@ export async function createTicketFromModal(interaction: ModalSubmitInteraction,
       content: `<@${interaction.user.id}>`,
       embeds: [
         ticketControlEmbed(ticket),
-        roseEmbed("Opening Details", formatOpeningDetails(description, answers.proof, answers))
+        roseEmbed("Opening Details", formatOpeningDetails(description, answers))
       ],
       components: ticketControlRows(ticket.ticketId)
     });
@@ -195,6 +188,9 @@ export async function createTicketFromModal(interaction: ModalSubmitInteraction,
     await postGuildLog(guild, `Ticket #${ticket.publicId} opened by <@${interaction.user.id}> in <#${thread.id}>.`, {
       ticketId: ticket.ticketId,
       pingRoleIds: option.pingStaff ? option.staffRoleIds : []
+    });
+    await refreshPanelMessage(interaction.client, option.panelId).catch((error) => {
+      logger.warn("Failed to refresh ticket panel after ticket creation.", error);
     });
     return replySuccess(interaction, `Your ticket was created: <#${thread.id}>`, true);
   } catch (error) {
@@ -575,7 +571,11 @@ export async function ensureVisibleTicketControls(client: Client) {
       if (hasControls || hasSummary) hasVisibleControls = true;
 
       const embeds = message.embeds.length
-        ? message.embeds.map((embed) => EmbedBuilder.from(embed).setColor(brand.color))
+        ? message.embeds.map((embed) =>
+            embed.title?.startsWith(`Ticket #${ticket.publicId}:`)
+              ? ticketControlEmbed(ticket)
+              : EmbedBuilder.from(embed).setColor(brand.color)
+          )
         : [ticketControlEmbed(ticket)];
       const payload: {
         embeds: EmbedBuilder[];
@@ -880,35 +880,34 @@ async function applyClaimMode(guild: Guild, ticket: Ticket) {
   }
 }
 
-function buildModalQuestions(option: TicketPanelOption): ModalQuestion[] {
-  const raw = Array.isArray(option.modalQuestions) ? (option.modalQuestions as ModalQuestion[]) : [];
-  const questions = raw.length ? raw : defaultModalQuestions;
-  const ids = new Set(questions.map((question) => question.id));
-  const merged = [...questions];
-
-  if (!ids.has("title")) merged.unshift(defaultModalQuestions[0]!);
-  if (!ids.has("description")) merged.splice(1, 0, defaultModalQuestions[1]!);
-  if (!ids.has("priority") && option.priorityEnabled) {
-    merged.push({
+function buildTicketModalQuestions(): ModalQuestion[] {
+  return [
+    ...defaultModalQuestions,
+    {
       id: "priority",
       label: "Priority: Low, Medium, High, Urgent",
       placeholder: "Medium",
       required: true,
       paragraph: false
-    });
-  }
-  if (!ids.has("proof")) merged.push(defaultModalQuestions[2]!);
-
-  return merged.slice(0, 5);
+    }
+  ];
 }
 
-function collectModalAnswers(interaction: ModalSubmitInteraction, questions: ModalQuestion[]) {
+function collectModalAnswers(interaction: ModalSubmitInteraction) {
   const answers: Record<string, string> = {};
-  for (const question of questions) {
-    const value = interaction.fields.getTextInputValue(question.id);
-    if (value) answers[question.id] = value;
+  for (const id of ["title", "description", "priority"]) {
+    const value = readModalValue(interaction, id);
+    if (value) answers[id] = value;
   }
   return answers;
+}
+
+function readModalValue(interaction: ModalSubmitInteraction, id: string) {
+  try {
+    return interaction.fields.getTextInputValue(id);
+  } catch {
+    return null;
+  }
 }
 
 function normalizePriority(input: string | undefined | null): TicketPriority | null {
@@ -917,12 +916,12 @@ function normalizePriority(input: string | undefined | null): TicketPriority | n
   return null;
 }
 
-function formatOpeningDetails(description: string, proof: string | undefined, answers: Record<string, string>) {
+function formatOpeningDetails(description: string, answers: Record<string, string>) {
   const custom = Object.entries(answers)
     .filter(([key]) => !["title", "description", "priority", "proof"].includes(key))
     .map(([key, value]) => `**${key}:** ${value}`)
     .join("\n");
-  return [`**Description:**\n${description}`, proof ? `**Proof/link/image note:**\n${proof}` : null, custom || null]
+  return [`**Description:**\n${description}`, custom || null]
     .filter(Boolean)
     .join("\n\n");
 }

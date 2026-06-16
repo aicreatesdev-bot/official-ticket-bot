@@ -25,7 +25,7 @@ registerInteractionHandlers(client);
 client.once("ready", async () => {
   logger.info(`Logged in as ${client.user?.tag}.`);
   client.user?.setPresence({
-    activities: [{ name: "private ticket threads", type: ActivityType.Watching }],
+    activities: [{ name: "made for rose", type: ActivityType.Playing }],
     status: "online"
   });
 

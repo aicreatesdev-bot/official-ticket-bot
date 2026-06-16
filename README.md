@@ -87,4 +87,5 @@ docs/
 
 - [Invite permissions](docs/invite-permissions.md)
 - [Deployment guide](docs/deployment.md)
+- [Railway deployment](docs/railway.md)
 - [Database schema](docs/database.md)

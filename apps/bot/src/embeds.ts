@@ -18,7 +18,7 @@ import type { Ticket, TicketPanel, TicketPanelOption } from "@rose-ticket/db";
 
 export function roseEmbed(title: string, description?: string, color: ColorResolvable = brand.color) {
   return new EmbedBuilder()
-    .setColor(brand.color)
+    .setColor(color)
     .setTitle(title)
     .setDescription(description ?? null)
     .setTimestamp()
@@ -35,7 +35,7 @@ export function errorEmbed(description: string) {
 
 export function panelEmbed(panel: TicketPanel) {
   const embed = new EmbedBuilder()
-    .setColor(brand.color)
+    .setColor((panel.embedColor || brand.color) as ColorResolvable)
     .setTitle(panel.embedTitle)
     .setDescription(panel.embedDescription)
     .setFooter({ text: `${brand.name} panel - ${panel.name}` });
@@ -146,6 +146,9 @@ export function pendingTicketLogRows(ticketId: string) {
 }
 
 export function priorityColor(priority: string): ColorResolvable {
+  if (priority === "urgent") return brand.dangerColor;
+  if (priority === "high") return brand.warningColor;
+  if (priority === "low") return 0x38bdf8;
   return brand.color;
 }
 

@@ -49,7 +49,7 @@ export default function PanelsPage() {
         embedDescription: form.get("embedDescription"),
         embedColor: form.get("embedColor"),
         channelId: form.get("channelId") || null,
-        dropdownPlaceholder: form.get("dropdownPlaceholder") || "Select a ticket category",
+        dropdownPlaceholder: form.get("dropdownPlaceholder") || "🎫 create ticket for any query",
         isEnabled: true
       })
     });
@@ -89,7 +89,7 @@ export default function PanelsPage() {
         </label>
         <label>
           <span className="label">Color</span>
-          <input name="embedColor" className="input" defaultValue="#f174d2" />
+          <input name="embedColor" className="input" defaultValue="#22c55e" />
         </label>
         <label>
           <span className="label">Send channel</span>
@@ -104,7 +104,7 @@ export default function PanelsPage() {
         </label>
         <label className="lg:col-span-2">
           <span className="label">Dropdown placeholder</span>
-          <input name="dropdownPlaceholder" className="input" defaultValue="Select a ticket category" />
+          <input name="dropdownPlaceholder" className="input" defaultValue="🎫 create ticket for any query" />
         </label>
         <button className="button lg:col-span-2">Create Panel</button>
       </form>

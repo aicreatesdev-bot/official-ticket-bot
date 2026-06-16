@@ -1,7 +1,7 @@
 import express, { type Request, type Response, type Router } from "express";
 import { Prisma, prisma } from "@rose-ticket/db";
 import {
-  brand,
+  colorToInt,
   customId,
   guildSettingsSchema,
   hasManageGuild,
@@ -157,7 +157,7 @@ export function createRouter(): Router {
         where: { guildId: req.params.guildId },
         data: {
           ...parsed,
-          brandColor: brand.color
+          brandColor: colorToInt(parsed.brandColor)
         }
       });
       res.json({ settings: serializeSettings(settings) });
@@ -210,7 +210,7 @@ export function createRouter(): Router {
           name: parsed.name,
           embedTitle: parsed.embedTitle,
           embedDescription: parsed.embedDescription,
-          embedColor: brand.color,
+          embedColor: colorToInt(parsed.embedColor),
           imageUrl: parsed.imageUrl,
           thumbnailUrl: parsed.thumbnailUrl,
           channelId: parsed.channelId,
@@ -235,7 +235,7 @@ export function createRouter(): Router {
           name: parsed.name,
           embedTitle: parsed.embedTitle,
           embedDescription: parsed.embedDescription,
-          embedColor: parsed.embedColor ? brand.color : undefined,
+          embedColor: parsed.embedColor ? colorToInt(parsed.embedColor) : undefined,
           imageUrl: parsed.imageUrl,
           thumbnailUrl: parsed.thumbnailUrl,
           channelId: parsed.channelId,
@@ -396,7 +396,7 @@ export function createRouter(): Router {
         }
       });
       await sendThreadMessage(ticket.threadId, {
-        embeds: [{ title: "Ticket Closed", description: `Closed from dashboard by <@${req.session!.user.id}>.`, color: 0xf174d2 }]
+        embeds: [{ title: "Ticket Closed", description: `Closed from dashboard by <@${req.session!.user.id}>.`, color: 0xef4444 }]
       }).catch(() => null);
       await patchChannel(ticket.threadId, { archived: true, locked: true }).catch(() => null);
       res.json({ ticket: updated, transcript });
@@ -422,7 +422,7 @@ export function createRouter(): Router {
       const parsed = ticketUpdateSchema.pick({ priority: true }).parse(req.body);
       const ticket = await prisma.ticket.update({ where: { ticketId: req.params.ticketId }, data: { priority: parsed.priority } });
       await sendThreadMessage(ticket.threadId, {
-        embeds: [{ title: "Priority Updated", description: `Priority changed to **${ticket.priority}** from dashboard.`, color: 0xf174d2 }]
+        embeds: [{ title: "Priority Updated", description: `Priority changed to **${ticket.priority}** from dashboard.`, color: 0x8b5cf6 }]
       }).catch(() => null);
       res.json({ ticket });
     } catch (error) {
@@ -528,7 +528,7 @@ function panelMessagePayload(panel: {
       {
         title: panel.embedTitle,
         description: panel.embedDescription,
-        color: 0xf174d2,
+        color: panel.embedColor,
         image: panel.imageUrl ? { url: panel.imageUrl } : undefined,
         thumbnail: panel.thumbnailUrl ? { url: panel.thumbnailUrl } : undefined,
         footer: { text: `Rose Ticket panel - ${panel.name}` }

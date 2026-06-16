@@ -86,7 +86,18 @@ Services:
 - Bot: background worker
 - Postgres: port `5432`
 
-## 7. Reverse Proxy
+## 7. Deploy Bot On Railway
+
+The repository includes `railway.json` for a Railway bot worker deploy. It uses:
+
+```bash
+pnpm railway:bot:build
+pnpm railway:bot:start
+```
+
+Set Railway variables for `DATABASE_URL`, `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, and `BOT_DEV_GUILD_ID`, then deploy from GitHub. See [Railway deployment](railway.md).
+
+## 8. Reverse Proxy
 
 Put HTTPS in front of the dashboard and API.
 
@@ -100,7 +111,7 @@ Example public URLs:
 
 Set `COOKIE_DOMAIN=.example.com` only if dashboard and API share a parent domain and you understand cookie scope.
 
-## 8. Operational Checks
+## 9. Operational Checks
 
 After deploy:
 
@@ -113,7 +124,7 @@ After deploy:
 7. Claim, rename, set priority, save transcript, and close.
 8. Confirm transcript appears in the dashboard.
 
-## 9. Updating
+## 10. Updating
 
 ```bash
 git pull

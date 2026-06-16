@@ -12,7 +12,12 @@
     "test": "pnpm -r test",
     "db:generate": "pnpm --filter @rose-ticket/db prisma:generate",
     "db:migrate": "pnpm --filter @rose-ticket/db prisma:migrate",
-    "db:studio": "pnpm --filter @rose-ticket/db prisma:studio"
+    "db:push": "pnpm --filter @rose-ticket/db prisma:push",
+    "db:studio": "pnpm --filter @rose-ticket/db prisma:studio",
+    "railway:bot:build": "pnpm --filter @rose-ticket/shared build && pnpm --filter @rose-ticket/db build && pnpm --filter @rose-ticket/bot build",
+    "railway:bot:predeploy": "node scripts/prisma-db-push.mjs",
+    "railway:bot:start": "node apps/bot/dist/apps/bot/src/index.js",
+    "railway:bot:commands": "pnpm --filter @rose-ticket/bot commands:register"
   },
   "engines": {
     "node": ">=20.0.0",

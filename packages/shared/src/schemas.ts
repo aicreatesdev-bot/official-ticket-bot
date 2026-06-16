@@ -30,11 +30,11 @@ export const panelSchema = z.object({
   name: z.string().min(1).max(80),
   embedTitle: z.string().min(1).max(256),
   embedDescription: z.string().min(1).max(4000),
-  embedColor: hexColorSchema.default("#f174d2"),
+  embedColor: hexColorSchema.default("#22c55e"),
   imageUrl: z.string().url().optional().nullable(),
   thumbnailUrl: z.string().url().optional().nullable(),
   channelId: snowflakeSchema.optional().nullable(),
-  dropdownPlaceholder: z.string().min(1).max(150).default("Select a ticket category"),
+  dropdownPlaceholder: z.string().min(1).max(150).default("🎫 create ticket for any query"),
   isEnabled: z.boolean().default(true)
 });
 
@@ -54,7 +54,7 @@ export const guildSettingsSchema = z.object({
   autoCloseTime: z.number().int().min(600).max(60 * 60 * 24 * 60).default(86400),
   dmTranscriptOnClose: z.boolean().default(false),
   brandName: z.string().min(1).max(80).default("Rose Ticket"),
-  brandColor: hexColorSchema.default("#f174d2")
+  brandColor: hexColorSchema.default("#8b5cf6")
 });
 
 export const ticketUpdateSchema = z.object({
@@ -68,6 +68,6 @@ export function colorToInt(color: string) {
 }
 
 export function intToHexColor(color: number | null | undefined) {
-  if (!color) return "#f174d2";
+  if (!color) return "#8b5cf6";
   return `#${color.toString(16).padStart(6, "0")}`;
 }

@@ -12,22 +12,27 @@ loadDotEnv(join(rootDir, ".env"));
 
 const prisma = new PrismaClient();
 const guildId = process.env.BOT_DEV_GUILD_ID ?? "1506225231658749972";
-const defaultRoseColor = 0x8b5cf6;
-const defaultPanelColor = 0x22c55e;
 
 try {
-  const [settings, panels] = await prisma.$transaction([
-    prisma.guildSettings.updateMany({
-      where: { guildId },
-      data: { brandColor: defaultRoseColor }
-    }),
-    prisma.ticketPanel.updateMany({
-      where: { guildId },
-      data: { embedColor: defaultPanelColor }
-    })
-  ]);
+  const options = await prisma.ticketPanelOption.findMany({
+    where: { panel: { guildId } },
+    select: { optionId: true, modalQuestions: true }
+  });
 
-  console.log(JSON.stringify({ guildId, brandColor: "#8b5cf6", panelColor: "#22c55e", settings: settings.count, panels: panels.count }));
+  let updated = 0;
+  for (const option of options) {
+    if (!Array.isArray(option.modalQuestions)) continue;
+    const cleaned = option.modalQuestions.filter((question) => question?.id !== "proof");
+    if (cleaned.length === option.modalQuestions.length) continue;
+
+    await prisma.ticketPanelOption.update({
+      where: { optionId: option.optionId },
+      data: { modalQuestions: cleaned }
+    });
+    updated += 1;
+  }
+
+  console.log(JSON.stringify({ guildId, scanned: options.length, updated }));
 } finally {
   await prisma.$disconnect();
 }

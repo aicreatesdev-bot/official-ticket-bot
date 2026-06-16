@@ -53,7 +53,7 @@ export const commandBuilders = [
           option.setName("option_label").setDescription("Dropdown option label.").setRequired(false)
         )
         .addStringOption((option) =>
-          option.setName("color").setDescription("Embed color hex, like #f174d2.").setRequired(false)
+          option.setName("color").setDescription("Embed color hex, like #22c55e.").setRequired(false)
         )
     )
     .addSubcommand((sub) =>

@@ -2,10 +2,10 @@ import type { ModalQuestion, TicketPriority } from "./types.js";
 
 export const brand = {
   name: "Rose Ticket",
-  color: 0xf174d2,
-  successColor: 0xf174d2,
-  warningColor: 0xf174d2,
-  dangerColor: 0xf174d2,
+  color: 0x8b5cf6,
+  successColor: 0x22c55e,
+  warningColor: 0xf59e0b,
+  dangerColor: 0xef4444,
   neutralColor: 0x111827
 } as const;
 
@@ -24,13 +24,6 @@ export const defaultModalQuestions: ModalQuestion[] = [
     label: "Problem description",
     placeholder: "Describe what happened and what you need help with",
     required: true,
-    paragraph: true
-  },
-  {
-    id: "proof",
-    label: "Proof/link/image note",
-    placeholder: "Optional links, evidence, or attachment notes",
-    required: false,
     paragraph: true
   }
 ];

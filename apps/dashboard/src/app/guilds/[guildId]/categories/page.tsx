@@ -67,8 +67,7 @@ export default function CategoriesPage() {
         modalQuestions: [
           { id: "title", label: "Issue title", required: true, paragraph: false },
           { id: "description", label: "Problem description", required: true, paragraph: true },
-          { id: "priority", label: "Priority: Low, Medium, High, Urgent", required: true, paragraph: false },
-          { id: "proof", label: "Proof/link/image note", required: false, paragraph: true }
+          { id: "priority", label: "Priority: Low, Medium, High, Urgent", required: true, paragraph: false }
         ],
         priorityEnabled: form.get("priorityEnabled") === "on",
         pingStaff: form.get("pingStaff") === "on",
