@@ -68,22 +68,23 @@ Keep the real value in Railway variables only. Do not commit secrets.
 4. Deploy the service.
 5. Commands register automatically when the bot starts. Set `BOT_DEV_GUILD_ID` to your server ID for instant guild command registration.
 
-Railway runs the schema sync before each deploy through `preDeployCommand`:
+Railway runs the schema sync and slash-command registration before each deploy through `preDeployCommand`:
 
 ```bash
 pnpm railway:bot:predeploy
 ```
 
-If this command fails, the bot should not start because commands would fail without the database schema. Fix `DATABASE_URL`, redeploy, and then check the logs again.
+If this command fails, the bot should not start because commands would fail without the database schema or Discord command registration. Fix the variable named in the Railway logs, redeploy, and then check the logs again.
 
 ## Expected Logs
 
 Healthy startup logs look like:
 
 ```text
+[Rose Ticket] Registered 5 slash commands for guild 1506225231658749972.
 [Rose Ticket] Starting Rose Ticket bot process.
 [Rose Ticket] Logged in as ...
-[Rose Ticket] Registered 5 slash commands for 1 guild.
+[Rose Ticket] Registered 5 slash commands for guild 1506225231658749972.
 [Rose Ticket] Restored 0 active ticket record(s) from the database.
 [Rose Ticket] Repaired 0 visible ticket control message(s).
 [Rose Ticket] Repainted 1 ticket panel message(s).

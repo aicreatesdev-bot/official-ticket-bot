@@ -10,18 +10,19 @@ export async function registerSlashCommands(guildIds?: string[]) {
   const targetGuildIds = [...new Set(guildIds ?? (env.BOT_DEV_GUILD_ID ? [env.BOT_DEV_GUILD_ID] : []))].filter(Boolean);
 
   if (targetGuildIds.length === 0) {
-    await rest.put(Routes.applicationCommands(env.DISCORD_CLIENT_ID), { body: slashCommands });
-    logger.info(`Registered ${slashCommands.length} slash commands globally.`);
+    const registeredCommands = (await rest.put(Routes.applicationCommands(env.DISCORD_CLIENT_ID), {
+      body: slashCommands
+    })) as Array<{ id: string }>;
+    logger.info(`Registered ${registeredCommands.length} slash commands globally.`);
     return;
   }
 
   for (const guildId of targetGuildIds) {
-    await rest.put(Routes.applicationGuildCommands(env.DISCORD_CLIENT_ID, guildId), { body: slashCommands });
+    const registeredCommands = (await rest.put(Routes.applicationGuildCommands(env.DISCORD_CLIENT_ID, guildId), {
+      body: slashCommands
+    })) as Array<{ id: string }>;
+    logger.info(`Registered ${registeredCommands.length} slash commands for guild ${guildId}.`);
   }
-
-  logger.info(
-    `Registered ${slashCommands.length} slash commands for ${targetGuildIds.length} guild${targetGuildIds.length === 1 ? "" : "s"}.`
-  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
