@@ -42,11 +42,21 @@ NODE_ENV=production
 
 If your database password contains special characters such as `@`, encode them in `DATABASE_URL`. For example, `@` becomes `%40`.
 
-For Supabase on Railway, prefer Supabase's pooled connection string instead of the direct `db.<project>.supabase.co:5432` string if you see connection errors. The pooled URL normally uses Supabase's pooler host and port `6543`. Add Prisma-friendly limits, for example:
+For Supabase on Railway, use Supabase's **Session pooler** connection string instead of the direct `db.<project>.supabase.co:5432` string. Supabase direct connections are IPv6 unless the project has the IPv4 add-on, while the shared pooler is IPv4-compatible.
+
+Use the connection string from:
 
 ```text
-DATABASE_URL=postgresql://postgres.<project-ref>:<encoded-password>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&pool_timeout=20
+Supabase Dashboard -> Connect -> Session pooler
 ```
+
+It looks like this:
+
+```text
+DATABASE_URL=postgresql://postgres.<project-ref>:<encoded-password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require&connection_limit=1&pool_timeout=20
+```
+
+Do not use the Transaction pooler on port `6543` for Prisma schema sync unless you know what you are doing, because transaction pooling does not support prepared statements.
 
 Keep the real value in Railway variables only. Do not commit secrets.
 
