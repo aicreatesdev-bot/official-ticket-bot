@@ -11,13 +11,15 @@ import { sweepLocks } from "./locks.js";
 
 logger.info("Starting Rose Ticket bot process.");
 
+const intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages];
+if (env.DISCORD_ENABLE_PRIVILEGED_INTENTS) {
+  intents.push(GatewayIntentBits.GuildMembers, GatewayIntentBits.MessageContent);
+} else {
+  logger.info("Privileged Discord intents are disabled. Enable them in the Developer Portal before setting DISCORD_ENABLE_PRIVILEGED_INTENTS=true.");
+}
+
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ],
+  intents,
   partials: [Partials.Channel, Partials.Message, Partials.GuildMember, Partials.User]
 });
 

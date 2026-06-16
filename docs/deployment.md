@@ -31,8 +31,9 @@ Use a long random value for `SESSION_SECRET`.
 
 Bot settings:
 
-- Enable Server Members Intent.
-- Enable Message Content Intent if you want full transcript message content.
+- Server Members Intent and Message Content Intent are optional by default.
+- Enable both privileged intents only if you set `DISCORD_ENABLE_PRIVILEGED_INTENTS=true`.
+- Message Content Intent is needed if you want full transcript message text from normal user messages.
 - Add redirect URI matching `DISCORD_REDIRECT_URI`.
 
 OAuth2 scopes:
