@@ -39,6 +39,7 @@ import {
   replySuccess,
   roseEmbed,
   safeReply,
+  ticketClosedDmEmbed,
   ticketControlEmbed,
   ticketControlRows
 } from "./embeds.js";
@@ -559,6 +560,8 @@ export async function closeTicket(
     }
   });
 
+  await sendTicketClosedDm(interaction.client, updated);
+
   const thread = await interaction.guild!.channels.fetch(ticket.threadId).catch(() => null);
   if (thread?.isThread()) {
     await announceTicketUpdate(thread, updated, `Ticket closed by <@${interaction.user.id}>.\n**Reason:** ${reason}`);
@@ -576,6 +579,19 @@ export async function closeTicket(
 
   await postClosedTicketLog(interaction.guild!, `Ticket #${ticket.publicId} closed by <@${interaction.user.id}>. Transcript: \`${transcript?.transcriptId ?? "not saved"}\`.`);
   return safeReply(interaction, { embeds: [roseEmbed("Ticket Closed", `Saved transcript and closed ticket #${ticket.publicId}.`)], ephemeral: true });
+}
+
+export async function sendTicketClosedDm(client: Client, ticket: Ticket) {
+  const user = await client.users.fetch(ticket.creatorId).catch(() => null);
+  if (!user) return false;
+
+  const sent = await user
+    .send({ embeds: [ticketClosedDmEmbed(ticket)] })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!sent) logger.info(`Could not DM ticket close notice to user ${ticket.creatorId}; their DMs may be disabled.`);
+  return sent;
 }
 
 export async function saveTranscriptForInteraction(

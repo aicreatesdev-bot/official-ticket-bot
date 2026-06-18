@@ -3,7 +3,7 @@ import { prisma, type Ticket } from "@rose-ticket/db";
 import { roseEmbed, ticketControlRows } from "./embeds.js";
 import { env } from "./env.js";
 import { logTicketEvent } from "./logging.js";
-import { saveTicketTranscript } from "./tickets.js";
+import { saveTicketTranscript, sendTicketClosedDm } from "./tickets.js";
 
 let interval: NodeJS.Timeout | null = null;
 
@@ -75,6 +75,8 @@ async function autoCloseTicket(client: Client, ticket: Ticket) {
       transcriptId: transcript?.transcriptId ?? ticket.transcriptId
     }
   });
+
+  await sendTicketClosedDm(client, updated);
 
   const guild = await client.guilds.fetch(ticket.guildId).catch(() => null);
   const thread = await guild?.channels.fetch(ticket.threadId).catch(() => null);

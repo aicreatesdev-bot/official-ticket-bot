@@ -81,6 +81,20 @@ export function ticketControlEmbed(ticket: Ticket) {
   );
 }
 
+export function ticketClosedDmEmbed(ticket: Ticket) {
+  const fullReason = ticket.closeReason || "No reason provided.";
+  const reason = fullReason.length > 1024 ? `${fullReason.slice(0, 1021)}...` : fullReason;
+
+  return roseEmbed("Ticket Closed", undefined, brand.successColor).addFields(
+    { name: "Ticket ID", value: `#${ticket.publicId}`, inline: true },
+    { name: "Opened By", value: `<@${ticket.creatorId}>`, inline: true },
+    { name: "Closed By", value: ticket.closedBy ? `<@${ticket.closedBy}>` : "System", inline: true },
+    { name: "Open Time", value: discordTimestamp(ticket.createdAt, "f"), inline: true },
+    { name: "Claimed By", value: ticket.claimedBy ? `<@${ticket.claimedBy}>` : "Not claimed", inline: true },
+    { name: "Reason", value: reason }
+  );
+}
+
 export function ticketControlRows(ticketId: string, closed = false) {
   const rowOne = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
