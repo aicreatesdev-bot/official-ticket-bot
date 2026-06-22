@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "pnpm --filter @rose-ticket/dashboard build",
+    "watchPatterns": ["/apps/dashboard/**"]
+  },
+  "deploy": {
+    "startCommand": "pnpm --filter @rose-ticket/dashboard start"
+  }
+}
